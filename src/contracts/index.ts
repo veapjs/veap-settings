@@ -1,4 +1,6 @@
 export {
   type ISettingsRepository,
+  type ISettingsService,
   SETTINGS_REPOSITORY,
-} from "./settings.repository";
+  SETTINGS_SERVICE,
+} from "./settings.repository.js";

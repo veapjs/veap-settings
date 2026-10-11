@@ -6,8 +6,9 @@ import {
 } from "@veap/kernel";
 import {
   type ISettingsRepository,
+  type ISettingsService,
   SETTINGS_REPOSITORY,
-} from "../contracts/settings.repository";
+} from "../contracts/settings.repository.js";
 
 /**
  * Application service for reading and writing settings.
@@ -16,7 +17,7 @@ import {
  * that are injected through the constructor.
  */
 @Injectable()
-export class SettingsService {
+export class SettingsService implements ISettingsService {
   constructor(
     @Inject(CACHE_PROVIDER) private cache: ICacheProvider,
     @Inject(SETTINGS_REPOSITORY) private repository: ISettingsRepository,
@@ -25,9 +26,13 @@ export class SettingsService {
   /**
    * Get a setting value by key.
    * @param key Setting key (e.g., "system:page")
-   * @returns Value as T or null
+   * @param defaultValue Optional fallback value if the key does not exist
+   * @returns Value as T or defaultValue / null
    */
-  public async get<T>(key: string): Promise<T | null> {
+  public async get<T>(
+    key: string,
+    defaultValue: T | null = null,
+  ): Promise<T | null> {
     const cacheKey = `settings:${key}`;
     const cached = await this.cache.get<T>(cacheKey);
     if (cached !== null) return cached;
@@ -35,8 +40,17 @@ export class SettingsService {
     const value = await this.repository.get<T>(key);
     if (value !== null) {
       await this.cache.set(cacheKey, value);
+      return value;
     }
-    return value;
+    return defaultValue;
+  }
+
+  /**
+   * Check if a setting exists.
+   * @param key Setting key
+   */
+  public async has(key: string): Promise<boolean> {
+    return (await this.get(key)) !== null;
   }
 
   /**
@@ -64,5 +78,15 @@ export class SettingsService {
   public async clear(): Promise<void> {
     await this.repository.clear();
     await this.cache.clear();
+  }
+
+  /**
+   * Retrieve all settings as a key-value map.
+   */
+  public async all(): Promise<Record<string, unknown>> {
+    if (this.repository.all) {
+      return this.repository.all();
+    }
+    return {};
   }
 }

@@ -1,4 +1,4 @@
 export {
   type SettingsConfig,
   SettingsServiceProvider,
-} from "./settings.provider";
+} from "./settings.provider.js";

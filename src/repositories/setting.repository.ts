@@ -1,5 +1,5 @@
-import type { ISettingsRepository } from "../contracts/settings.repository";
-import { Setting } from "../models/Setting";
+import type { ISettingsRepository } from "../contracts/settings.repository.js";
+import { Setting } from "../models/Setting.js";
 
 /**
  * `ISettingsRepository` adapter backed by the `Setting` ActiveRecord model.
@@ -19,5 +19,17 @@ export class ActiveRecordSettingsRepository implements ISettingsRepository {
 
   async clear(): Promise<void> {
     await Setting.query().delete();
+  }
+
+  async all(): Promise<Record<string, unknown>> {
+    const settings = await Setting.all();
+    const result: Record<string, unknown> = {};
+    for (const s of settings) {
+      const k = s.getAttribute("key");
+      if (k) {
+        result[k] = s.getAttribute("value");
+      }
+    }
+    return result;
   }
 }

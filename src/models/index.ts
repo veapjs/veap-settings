@@ -1,4 +1,4 @@
 export {
   Setting,
   type SettingAttributes,
-} from "./Setting";
+} from "./Setting.js";

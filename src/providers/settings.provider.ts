@@ -1,9 +1,17 @@
 import { isDatabaseInitialized } from "@veap/database";
-import { type Container, logger, ServiceProvider } from "@veap/kernel";
-import { SETTINGS_REPOSITORY } from "../contracts/settings.repository";
-import { runSettingsMigrations } from "../migrations";
-import { ActiveRecordSettingsRepository } from "../repositories/setting.repository";
-import { SettingsService } from "../services/settings.service";
+import {
+  ConfigService,
+  type Container,
+  logger,
+  ServiceProvider,
+} from "@veap/kernel";
+import {
+  SETTINGS_REPOSITORY,
+  SETTINGS_SERVICE,
+} from "../contracts/settings.repository.js";
+import { runSettingsMigrations } from "../migrations/index.js";
+import { ActiveRecordSettingsRepository } from "../repositories/setting.repository.js";
+import { SettingsService } from "../services/settings.service.js";
 
 export interface SettingsConfig {
   /**
@@ -33,10 +41,33 @@ export class SettingsServiceProvider extends ServiceProvider {
       useClass: SettingsService,
       singleton: true,
     });
+
+    this.container.register({
+      token: SETTINGS_SERVICE,
+      useFactory: (service: SettingsService) => service,
+      inject: [SettingsService],
+      singleton: true,
+    });
   }
 
   async boot(): Promise<void> {
-    if (this.config?.autoMigrate !== false && isDatabaseInitialized()) {
+    const configService = this.container.has(ConfigService)
+      ? await this.container.resolve(ConfigService)
+      : undefined;
+
+    const envAutoMigrate =
+      configService?.get("SETTINGS_AUTO_MIGRATE") ??
+      (typeof process !== "undefined"
+        ? process.env.SETTINGS_AUTO_MIGRATE
+        : undefined);
+
+    const shouldAutoMigrate =
+      this.config?.autoMigrate ??
+      (envAutoMigrate !== undefined
+        ? envAutoMigrate === "true" || envAutoMigrate === "1"
+        : true);
+
+    if (shouldAutoMigrate !== false && isDatabaseInitialized()) {
       try {
         await runSettingsMigrations();
       } catch (error: any) {

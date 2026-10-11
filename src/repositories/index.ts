@@ -1,1 +1,1 @@
-export { ActiveRecordSettingsRepository } from "./setting.repository";
+export { ActiveRecordSettingsRepository } from "./setting.repository.js";

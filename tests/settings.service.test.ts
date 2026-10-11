@@ -1,9 +1,21 @@
-import { initDatabase, Schema } from "@veap/database";
-import { MemoryCacheProvider } from "@veap/kernel";
+import { initDatabase } from "@veap/database";
+import {
+  Application,
+  Container,
+  container,
+  MemoryCacheProvider,
+} from "@veap/kernel";
 import { beforeAll, describe, expect, it } from "vitest";
-import { Setting } from "../src/models";
-import { ActiveRecordSettingsRepository } from "../src/repositories";
-import { SettingsService } from "../src/services";
+import {
+  SETTINGS_REPOSITORY,
+  SETTINGS_SERVICE,
+} from "../src/contracts/index.js";
+import { runSettingsMigrations } from "../src/migrations/index.js";
+import { Setting } from "../src/models/index.js";
+import { SettingsServiceProvider } from "../src/providers/index.js";
+import { ActiveRecordSettingsRepository } from "../src/repositories/index.js";
+import { SettingsService } from "../src/services/index.js";
+import "../src/composition.js";
 
 describe("@veap/settings", () => {
   let settingsService: SettingsService;
@@ -16,13 +28,8 @@ describe("@veap/settings", () => {
       useNullAsDefault: true,
     });
 
-    const schema = new Schema();
-    await schema.createTable("settings", (table) => {
-      table.uuid("id");
-      table.string("key").notNull().unique();
-      table.text("value");
-      table.timestamp("updated_at");
-    });
+    // Run actual settings migrations
+    await runSettingsMigrations();
 
     cache = new MemoryCacheProvider();
     const repository = new ActiveRecordSettingsRepository();
@@ -40,12 +47,36 @@ describe("@veap/settings", () => {
     expect(cached).toBe("Veap Application");
   });
 
+  it("returns default fallback when setting does not exist", async () => {
+    const fallback = await settingsService.get<string>(
+      "missing_key",
+      "default_value",
+    );
+    expect(fallback).toBe("default_value");
+
+    const nonExistingNull = await settingsService.get<string>("non_existing");
+    expect(nonExistingNull).toBeNull();
+  });
+
+  it("checks existence with has()", async () => {
+    await settingsService.set("existing_flag", true);
+    expect(await settingsService.has("existing_flag")).toBe(true);
+    expect(await settingsService.has("missing_flag")).toBe(false);
+  });
+
   it("stores structured JSON objects", async () => {
     const config = { theme: "dark", notifications: true, maxItems: 50 };
     await settingsService.set("app_config", config);
 
     const retrieved = await settingsService.get<typeof config>("app_config");
     expect(retrieved).toEqual(config);
+  });
+
+  it("retrieves all settings via all()", async () => {
+    const allSettings = await settingsService.all();
+    expect(allSettings).toBeDefined();
+    expect(allSettings.site_name).toBe("Veap Application");
+    expect(allSettings.existing_flag).toBe(true);
   });
 
   it("removes settings and clears cache entry", async () => {
@@ -73,5 +104,38 @@ describe("@veap/settings", () => {
 
     const siteName = await settingsService.get("site_name");
     expect(siteName).toBeNull();
+  });
+
+  it("registers strongly typed tokens in IoC container", async () => {
+    const localContainer = new Container();
+    localContainer.register({
+      token: Symbol.for("veap:kernel:cache"),
+      useValue: new MemoryCacheProvider(),
+      singleton: true,
+    });
+
+    const provider = new SettingsServiceProvider(localContainer, {
+      autoMigrate: false,
+    });
+    provider.register();
+
+    expect(localContainer.has(SETTINGS_REPOSITORY)).toBe(true);
+    expect(localContainer.has(SETTINGS_SERVICE)).toBe(true);
+    expect(localContainer.has(SettingsService)).toBe(true);
+
+    const resolvedService = await localContainer.resolve(SETTINGS_SERVICE);
+    expect(resolvedService).toBeInstanceOf(SettingsService);
+  });
+
+  it("supports Application.configure().withSettings() builder syntax", async () => {
+    await Application.shutdown();
+    const app = Application.configure()
+      .withSettings({ autoMigrate: false })
+      .create();
+    expect(app).toBeDefined();
+    await app.bootstrap();
+
+    const service = await container.resolve(SETTINGS_SERVICE);
+    expect(service).toBeDefined();
   });
 });

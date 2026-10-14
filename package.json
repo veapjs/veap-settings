@@ -1,6 +1,6 @@
 {
   "name": "@veap/settings",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Application settings management, caching, and persistence for Veap",
   "bugs": "https://github.com/veapjs/veap-settings/issues",
   "repository": {
@@ -40,8 +40,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@veap/database": "0.1.2",
-    "@veap/kernel": "0.1.4"
+    "@veap/database": "0.1.5",
+    "@veap/kernel": "0.1.5"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

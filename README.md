@@ -54,9 +54,10 @@ import { SettingsServiceProvider } from "@veap/settings";
 export const app = Application.configure()
   .use(DatabaseServiceProvider)
   .use(
-    new SettingsServiceProvider(undefined, {
-      autoMigrate: true, // Automatically applies settings table migrations
-    }),
+    (c) =>
+      new SettingsServiceProvider(c, {
+        autoMigrate: true, // Automatically applies settings table migrations
+      }),
   )
   .create();
 ```
@@ -78,8 +79,8 @@ const maintenance = await settings.get<boolean>("system.maintenance", false);
 await settings.set("site.name", "My Enterprise Portal");
 await settings.set("features.comments_enabled", true);
 
-// Delete a setting
-await settings.delete("obsolete_key");
+// Remove a setting
+await settings.remove("obsolete_key");
 ```
 
 ### Direct Model Access
@@ -98,8 +99,9 @@ const allSettings = await Setting.query().orderBy("key", "asc").get();
 | Export Path                 | Content                                                                 |
 | --------------------------- | ----------------------------------------------------------------------- |
 | `@veap/settings`            | `SettingsService`, `SettingsServiceProvider`, and repository interfaces |
+| `@veap/settings/server`     | Server-side entry point re-exporting core settings APIs                 |
 | `@veap/settings/models`     | Active Record `Setting` model                                           |
-| `@veap/settings/migrations` | Knex migrations for the settings schema                                 |
+| `@veap/settings/migrations` | Knex migrations for the settings schema (`settingsMigrations`)          |
 
 ## Documentation
 

@@ -1,6 +1,7 @@
 [![CI](https://github.com/veapjs/veap-settings/actions/workflows/CI.yml/badge.svg)](https://github.com/veapjs/veap-settings/actions/workflows/CI.yml)
 [![Release](https://github.com/veapjs/veap-settings/actions/workflows/RELEASE.yml/badge.svg)](https://github.com/veapjs/veap-settings/actions/workflows/RELEASE.yml)
-[![Version](https://img.shields.io/npm/v/@veap/settings?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@veap/settings)
+[![Version](https://img.shields.io/npm/v/@veap%2Fsettings?style=flat-square&color=181717&logo=npm&logoColor=959da5)](https://www.npmjs.com/package/@veap/settings)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=959da5)](https://discord.gg/qTkrCwpMW)
 
 # @veap/settings
 
